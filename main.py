@@ -1,21 +1,16 @@
 from telethon import TelegramClient, events
 import asyncio
 from datetime import datetime
-import os
-
-# Papkani yaratish
-os.makedirs("/app/sessions", exist_ok=True)
 
 # =====================================
 # API MA'LUMOTLARI
 # =====================================
-...
 
 api_id = 39262064
 api_hash = "64e003980dddfb0bfc6bbd4ea9e717bb"
 
 # Session nomi
-session_name = "/app/sessions/ardosher_session"
+session_name = "ardosher_session"
 
 # =====================================
 # CLIENT
