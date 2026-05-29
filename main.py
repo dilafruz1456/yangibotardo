@@ -10,7 +10,7 @@ api_id = 39262064
 api_hash = "64e003980dddfb0bfc6bbd4ea9e717bb"
 
 # Session nomi
-session_name = "ardosher_session"
+session_name = "session_name = "/app/sessions/ardosher_session""
 
 # =====================================
 # CLIENT
