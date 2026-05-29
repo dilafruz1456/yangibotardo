@@ -2,6 +2,7 @@ import os
 os.makedirs("/app/sessions", exist_ok=True)
 
 from telethon import TelegramClient, events
+from telethon.tl.types import User
 import asyncio
 from datetime import datetime
 
@@ -11,30 +12,66 @@ session_name = "/app/sessions/ardosher_session"
 
 client = TelegramClient(session_name, api_id, api_hash)
 
+replied_users = set()
+
+AUTO_REPLY_MESSAGE = (
+    "Salom! Hozir band yoki uxlayapman. "
+    "Xabaringizni o'qib, tez orada javob beraman. 🙏"
+)
+
+
 @client.on(events.NewMessage(incoming=True))
 async def handle_message(event):
-    """Har bir xabar uchun javob berish"""
+    """Faqat shaxsiy xabarlarga, faqat haqiqiy foydalanuvchilarga,
+    faqat soat 00:00-10:00 oraligida bir marta javob berish."""
+    # Faqat shaxsiy (private) suhbatlar
+    if not event.is_private:
+        return
+
     sender = await event.get_sender()
-    message_text = event.message.message
-    
-    print(f"📨 {sender.first_name}: {message_text}")
-    
-    # Javob berish
-    await event.reply(f"✅ Xabar qabul qilindi: {message_text}")
+
+    # Faqat haqiqiy foydalanuvchilar (botlar emas)
+    if not isinstance(sender, User) or sender.bot:
+        return
+
+    now = datetime.now()
+    if not (0 <= now.hour < 10):
+        return
+
+    if sender.id in replied_users:
+        return
+
+    replied_users.add(sender.id)
+    await event.reply(AUTO_REPLY_MESSAGE)
+    print(f"Javob yuborildi: {sender.first_name} (id={sender.id})")
+
+
+async def keep_online():
+    """Har 60 soniyada typing holati korsatib akkauntni online saqlaydi."""
+    while True:
+        try:
+            me = await client.get_me()
+            async with client.action(me, "typing"):
+                await asyncio.sleep(2)
+        except Exception as e:
+            print(f"keep_online xatosi: {e}")
+        await asyncio.sleep(60)
+
 
 async def main():
-    # Login qilish
-    if not await client.is_user_authorized():
-        await client.start()
-    
+    # Avval ulanish, keyin avtorizatsiyani tekshirish
+    await client.start()
+
     me = await client.get_me()
-    print(f"✅ Akkaunt ulandi: {me.first_name}")
+    print(f"Akkaunt ulandi: {me.first_name}")
     print("================================")
     print("24/7 online ishlayapti...")
     print("================================")
-    
-    # Bot ishga tushadi
+
+    asyncio.ensure_future(keep_online())
+
     await client.run_until_disconnected()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+
+with client:
+    client.loop.run_until_complete(main())
